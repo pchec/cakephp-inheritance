@@ -1,0 +1,23 @@
+{
+    "name": "pchec/Inheritance",
+    "description": "CakePHP plugin with Single Table Inheritance behavior",
+    "type": "cakephp-plugin",
+    "require": {
+        "php": ">=5.4.16",
+        "cakephp/cakephp": "~3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Inheritance\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Inheritance\\Test\\": "tests",
+            "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
+        }
+    }
+}
