@@ -46,25 +46,29 @@ class SingleTableBehavior extends Behavior
      */
     public function initialize(array $config)
     {
-        if (!empty($config['table']) && $config['table'] !== null) {
+        if (isset($config['table'])) {
             $this->_table->table($config['table']);
         } 
-        if (!empty($config['type']) && $config['type'] !== null) {
+
+        if (isset($config['type'])) {
             $this->setType($config['type']);
-        } 
-        if (!empty($config['fieldName']) && $config['fieldName'] !== null) {
+        } else {
+            $this->setType();
+        }
+
+        if (isset($config['fieldName'])) {
             $this->_fieldName = $config['fieldName'];
         } else {
             $this->_fieldName = 'type';
         }
-        $this->_hierarchy = (!empty($config['hierarchy'])
+
+        $this->_hierarchy = (isset($config['hierarchy'])
             && ($config['hierarchy'] === false)) ? false : true;
     }
 
     /**
      * Accessor for the type.
      *
-     * @param string|null $type type value.
      * @return string
      */
     public function getType()
