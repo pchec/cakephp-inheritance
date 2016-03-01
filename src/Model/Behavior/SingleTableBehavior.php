@@ -103,18 +103,9 @@ class SingleTableBehavior extends Behavior
     public function beforeSave(Event $event, EntityInterface $entity, ArrayAccess $options)
     {
         $fieldName = $this->_fieldName;
-        $savedType = ($entity->get($fieldName) == '') ? null : $entity->get($fieldName);
-
-        // Changing the type is not possible. It is set only if empty.
-        if (is_null($savedType)) {
-            $currentType = $this->_formatTypeName();
-            $hierarchy = '';
-            if ($this->_hierarchy) {
-                $parentType = $this->_getParentTypes();
-                // Remove leading '|' from $parentType before concatenating.
-                $hierarchy = substr($parentType, 1);
-            }
-            $entity->set($fieldName, $currentType . $hierarchy);
+        if ($this->_setTypeAllowed($entity)) {
+            $classHierarchy = $this->_getClassHierarchy($entity);
+            $entity->set($fieldName, $classHierarchy);
         }
     }
 
@@ -128,12 +119,8 @@ class SingleTableBehavior extends Behavior
     public function beforeFind(Event $event, Query $query, ArrayAccess $options)
     {
         $type = $this->_formatTypeName();
-
         if ($type !== false) {
-            $query->where([
-                $this->_table->aliasField($this->_fieldName) . ' LIKE'
-                    => '%' . $type . '%',
-            ]);
+            $query->where($this->_getQueryCondition($type));
         }
     }
 
@@ -146,16 +133,85 @@ class SingleTableBehavior extends Behavior
      */
     public function beforeDelete(Event $event, EntityInterface $entity, ArrayAccess $options)
     {
+        if ($this->_deleteAllowed($entity)) {
+            return true;
+        } else {
+            $event->stopPropagation();
+            return false;
+        }
+    }
+
+    /**
+     * Checks if class type field can still be set. Setting it is only possible
+     * when $_fieldName determining class type is still empty.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity
+     * @param string $entity $fieldName
+     * @return bool
+     */
+    protected function _setTypeAllowed(EntityInterface $entity)
+    {
+        $fieldName = $this->_fieldName;
+        return !empty($entity->$fieldName) ? false : true;
+    }
+
+    /**
+     * Gets full class hierarchy as a string separated by pipes (|).
+     * If 'hierarchy' option has been set to false in the config
+     * then returns only the current class, without ancestors.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity
+     * @return string
+     */
+    protected function _getClassHierarchy(EntityInterface $entity)
+    {
+        $fieldName = $this->_fieldName;
+        $currentType = $this->_formatTypeName();
+        $hierarchy = $currentType ;
+        // Append ancestor names unless this option has been disabled.
+        if ($this->_hierarchy) {
+            $parentType = $this->_getParentTypes();
+            // Remove leading '|' from $parentType before concatenating.
+            $hierarchy .= substr($parentType, 1);
+        }
+
+        return $hierarchy;
+    }
+
+    /**
+     * Returns query condition selecting all records with the particular
+     * class type in its hierarchy.
+     *
+     * @param string $type Class type enclosed by pipes: |ClassType|
+     * @return array For example: ['type LIKE' => '%|ClassType|%']
+     */
+    protected function _getQueryCondition($type)
+    {
+        $field = $this->_table->aliasField($this->_fieldName);
+        $conditon = [$field . ' LIKE' => '%' . $type . '%'];
+
+        return $conditon;
+    }
+
+    /**
+     * Checks if the entity can be deleted.
+     *
+     * @param EntityInterface $entity
+     * @return bool
+     */
+    protected function _deleteAllowed(EntityInterface $entity)
+    {
         $type = $this->_formatTypeName();
 
         if ($type !== false) {
             $fieldName = $this->_fieldName;
 
             if ($entity->has($fieldName) && strpos($entity->get($fieldName), $type) === false) {
-                $event->stopPropagation();
                 return false;
             }
         }
+
+        return true;
     }
 
     /**
