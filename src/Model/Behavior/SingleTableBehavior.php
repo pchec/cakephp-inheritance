@@ -19,6 +19,18 @@ class SingleTableBehavior extends Behavior
 {
 
     /**
+     * Default configuration
+     *
+     * These are merged with user-provided configuration when the behavior is used.
+     *
+     * @var array
+     */
+    protected $_defaultConfig = [
+        'field_name' => 'type',
+        'hierarchy' => true,
+    ];
+
+    /**
      * Current class type.
      *
      * @var string
@@ -40,7 +52,14 @@ class SingleTableBehavior extends Behavior
     protected $_hierarchy;
 
     /**
-     * Initialize method.
+     * Initialize method. You can pass the following configuration options in an array:
+     *
+     * - table: Name of the table which is going to store data for all classes.
+     * - field_name: Name of the column storing class type. Defaults to 'type'.
+     * - hierarchy: Whether to save class hierarchy, making parents aware of their
+     *   descendants. Defaults to true.
+     * - type: Name to be used as type value. Defaults to class name without the 'Table'
+     *   word, i.e. MyClassTable becomes MyClass.
      *
      * @param array $config
      */
