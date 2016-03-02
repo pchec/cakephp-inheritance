@@ -56,8 +56,8 @@ class SingleTableBehavior extends Behavior
             $this->setType();
         }
 
-        if (isset($config['fieldName'])) {
-            $this->_fieldName = $config['fieldName'];
+        if (isset($config['field_name'])) {
+            $this->_fieldName = $config['field_name'];
         } else {
             $this->_fieldName = 'type';
         }
@@ -167,7 +167,10 @@ class SingleTableBehavior extends Behavior
     {
         $fieldName = $this->_fieldName;
         $currentType = $this->_formatTypeName();
-        $hierarchy = $currentType ;
+        if ($currentType === false) {
+            return null;
+        }
+        $hierarchy = $currentType;
         // Append ancestor names unless this option has been disabled.
         if ($this->_hierarchy) {
             $parentType = $this->_getParentTypes();
@@ -188,9 +191,9 @@ class SingleTableBehavior extends Behavior
     protected function _getQueryCondition($type)
     {
         $field = $this->_table->aliasField($this->_fieldName);
-        $conditon = [$field . ' LIKE' => '%' . $type . '%'];
+        $condition = [$field . ' LIKE' => '%' . $type . '%'];
 
-        return $conditon;
+        return $condition;
     }
 
     /**
@@ -236,7 +239,7 @@ class SingleTableBehavior extends Behavior
         $type = substr(strrchr($class, '\\'), 1);
         // Class names end with 'Table', so strip it out as well.
         $type = substr($type, 0, strpos($type, 'Table'));
-        if ($type === '') {
+        if ($type == '') {
             return false;
         } else {
             return '|' . $type . '|';
@@ -259,13 +262,13 @@ class SingleTableBehavior extends Behavior
         do {
             // Get parent class name.
             $parentClass = get_parent_class($currentClass);
-            // Instantinate the class to prepare for the next loop.
-            $currentClass = new $parentClass();
             // Format the type name appropriately
             $parent = $this->_formatTypeName($parentClass);
             // Loop ends when the Table class is reached (its name reduced to '||').
             if (!($parent === false)) {
                 $types .= $parent;
+                // Instantinate the class to prepare for the next loop.
+                $currentClass = new $parentClass();
             }
             // $i is a safety net to end the loop after 20 iterations in case
             // of any bugs.
