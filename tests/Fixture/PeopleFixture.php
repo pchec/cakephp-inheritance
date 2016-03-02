@@ -11,6 +11,13 @@ class PeopleFixture extends TestFixture
 {
 
     /**
+     * Tabke
+     *
+     * @var string
+     */
+    public $table = 'people';
+
+    /**
      * Fields
      *
      * @var array
