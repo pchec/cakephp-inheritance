@@ -77,11 +77,11 @@ $this->addBehavior('Inheritance.SingleTable', [
 ]);
 ```
 
-You can use your own field name instead of `type` by passing it in a `fieldName` array key.
+You can use your own field name instead of `type` by passing it in a `field_name` array key.
 
 ```
 $this->addBehavior('Inheritance.SingleTable', [
-	'fieldName' => 'your_field_name',
+	'field_name' => 'your_field_name',
 ]);
 ```
 
