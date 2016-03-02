@@ -11,38 +11,48 @@ use Inheritance\Model\Behavior\SingleTableBehavior;
  * Test classes
  *
  */
-class PeopleTable extends Table
+class TestPeopleTable extends Table
 {
     public function initialize(array $config)
     {
+        $this->table('test_people');
         $this->addBehavior('Inheritance.SingleTable');
     }
 }
 
-class ClientsTable extends PeopleTable
+class TestClientsTable extends TestPeopleTable
 {
-    
+    public function initialize(array $config)
+    {
+        $this->table('test_people');
+        $this->addBehavior('Inheritance.SingleTable');
+    }
 }
 
 
-class UsersTable extends PeopleTable
+class TestUsersTable extends TestPeopleTable
 {
-    
+    public function initialize(array $config)
+    {
+        //$this->table('people');
+        $this->addBehavior('Inheritance.SingleTable', [
+            'table' => 'test_people',
+            'field_name' => 'type',
+            'hierarchy' => false,
+        ]);
+    }
 }
 
-class Person extends Entity
+class TestPerson extends Entity
 {
-
 }
 
-class Client extends Person
+class TestClient extends TestPerson
 {
-
 }
 
-class User extends Person
+class TestUser extends TestPerson
 {
-
 }
 
 /**
@@ -50,12 +60,13 @@ class User extends Person
  */
 class SingleTableBehaviorTest extends TestCase
 {
+//    use \FriendsOfCake\TestUtilities\AccessibilityHelperTrait;
 
     /**
      * @var array
      */
     public $fixtures = [
-        'plugin.inheritance.people'
+        'plugin.inheritance.test_people'
     ];
 
     /**
@@ -66,7 +77,24 @@ class SingleTableBehaviorTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->People = TableRegistry::get('People');
+
+        $this->People = TableRegistry::get('TestPeople', [
+            'entityClass' => 'Inheritance\Test\TestCase\Model\Behavior\TestPerson',
+            'className' => 'Inheritance\Test\TestCase\Model\Behavior\TestPeopleTable',
+        ]);
+        $this->People->addBehavior('Inheritance.SingleTable');
+
+        $this->Clients = TableRegistry::get('TestClients', [
+            'entityClass' => 'Inheritance\Test\TestCase\Model\Behavior\TestClient',
+            'className' => 'Inheritance\Test\TestCase\Model\Behavior\TestClientsTable',
+        ]);
+        $this->Clients->addBehavior('Inheritance.SingleTable');
+
+        $this->Users = TableRegistry::get('TestUsers', [
+            'entityClass' => 'Inheritance\Test\TestCase\Model\Behavior\TestUser',
+            'className' => 'Inheritance\Test\TestCase\Model\Behavior\TestUsersTable',
+        ]);
+        $this->Users->addBehavior('Inheritance.SingleTable');
     }
 
     /**
@@ -77,40 +105,40 @@ class SingleTableBehaviorTest extends TestCase
     public function tearDown()
     {
         unset($this->People);
+        unset($this->Clients);
+        unset($this->Users);
+        TableRegistry::clear();
 
         parent::tearDown();
     }
 
     /**
-     * Test getType method
-     *
-     * @return void
-     */
-    public function testGetType()
-    {
-        $this->assertEquals('People', $this->People->getType());
-    }
-
-    /**
-     * Test setType method
-     *
-     * @return void
-     */
-    public function testSetType()
-    {
-        $this->People->type = 'Test';
-        $this->assertEquals('Test', $this->People->type);
-        $this->People->type = 'People';
-    }
-
-    /**
-     * Test beforeSave method
+     * Test saving TestPerson entity
      *
      * @return void
      */
     public function testBeforeSave()
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        // Test saving child class of Table
+        $person = $this->People->newEntity();
+        $this->assertTrue(empty($person->type));
+        $this->People->save($person);
+        $this->assertFalse(empty($person->type));
+        $this->assertEquals('|TestPeople|', $person->type);
+
+        // Test saving descendant entity with 'hierarchy' == true (default)
+        $client = $this->Clients->newEntity();
+        $this->assertTrue(empty($client->type));
+        $this->Clients->save($client);
+        $this->assertFalse(empty($client->type));
+        $this->assertEquals('|TestClients|TestPeople|', $client->type);
+
+        // Test saving descendant entity with 'hierarchy' == false
+        $user = $this->Users->newEntity();
+        $this->assertTrue(empty($user->type));
+        $this->Users->save($user);
+        $this->assertFalse(empty($user->type));
+        $this->assertEquals('|TestUsers|', $user->type);
     }
 
     /**
@@ -118,9 +146,25 @@ class SingleTableBehaviorTest extends TestCase
      *
      * @return void
      */
-    public function testBeforeFind()
+    public function testBeforeFindOk()
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $results = $this->People->find();
+        $this->assertEquals(3, $results->count());
+
+        $results = $this->Clients->find();
+        $this->assertEquals(1, $results->count());
+    }
+
+    /**
+     * Test beforeFind method where records should not be found
+     *
+     * @return void
+     */
+    public function testBeforeFindError()
+    {
+        // Recrod with that ID is a person and a client, but not a user.
+        $this->setExpectedException('Cake\Datasource\Exception\RecordNotFoundException');
+        $record = $this->Users->get('6c5aefcc-6699-49e1-86be-2aac9d61fb78');
     }
 
     /**
@@ -128,8 +172,25 @@ class SingleTableBehaviorTest extends TestCase
      *
      * @return void
      */
-    public function testBeforeDelete()
+    public function testBeforeDeleteOk()
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $client = $this->Clients->get('6c5aefcc-6699-49e1-86be-2aac9d61fb78');
+        $this->Clients->delete($client);
+        $results = $this->Clients->find()->where(['id' => '6c5aefcc-6699-49e1-86be-2aac9d61fb78']);
+        $this->assertEquals(0, $results->count());
+    }
+
+    /**
+     * Test beforeDelete method
+     *
+     * @return void
+     */
+    public function testBeforeDeleteError()
+    {
+        $client = $this->Clients->get('6c5aefcc-6699-49e1-86be-2aac9d61fb78');
+        // This client is not a user.
+        $this->Users->delete($client);
+        $results = $this->Clients->find()->where(['id' => '6c5aefcc-6699-49e1-86be-2aac9d61fb78']);
+        $this->assertEquals(1, $results->count());
     }
 }

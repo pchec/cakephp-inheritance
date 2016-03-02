@@ -7,7 +7,7 @@ use Cake\TestSuite\Fixture\TestFixture;
  * PeopleFixture
  *
  */
-class PeopleFixture extends TestFixture
+class TestPeopleFixture extends TestFixture
 {
 
     /**
@@ -15,7 +15,7 @@ class PeopleFixture extends TestFixture
      *
      * @var string
      */
-    public $table = 'people';
+    public $table = 'test_people';
 
     /**
      * Fields
@@ -40,7 +40,7 @@ class PeopleFixture extends TestFixture
     public $records = [
         [
             'id' => 'e90f8fb3-4076-4aa5-b626-34b1aabe026d',
-            'type' => '|Users|People|',
+            'type' => '|TestUsers|TestPeople|',
             'first_name' => 'Jane',
             'last_name' => 'Smith',
             'email' => 'jane@example.com',
@@ -48,13 +48,13 @@ class PeopleFixture extends TestFixture
         ],
         [
             'id' => '1361a501-c900-4f6f-bce0-d6efed4bf9c1',
-            'type' => '|People|',
+            'type' => '|TestPeople|',
             'first_name' => 'John',
             'last_name' => 'Adams',
         ],
         [
             'id' => '6c5aefcc-6699-49e1-86be-2aac9d61fb78',
-            'type' => '|Clients|People|',
+            'type' => '|TestClients|TestPeople|',
             'first_name' => 'Mary',
             'last_name' => 'Connor',
             'email' => 'mary@example.com',
