@@ -28,33 +28,14 @@ class SingleTableBehavior extends Behavior
     protected $_defaultConfig = [
         'field_name' => 'type',
         'hierarchy' => true,
+        'type' => null,
     ];
-
-    /**
-     * Current class type.
-     *
-     * @var string
-     */
-    protected $_type;
-
-    /**
-     * Name of the column storing class type.
-     *
-     * @var string
-     */
-    protected $_fieldName;
-
-    /**
-     * Whether to use class hierarchy or not.
-     *
-     * @var bool
-     */
-    protected $_hierarchy;
 
     /**
      * Initialize method. You can pass the following configuration options in an array:
      *
      * - table: Name of the table which is going to store data for all classes.
+     *   Defaults to the current class table.
      * - field_name: Name of the column storing class type. Defaults to 'type'.
      * - hierarchy: Whether to save class hierarchy, making parents aware of their
      *   descendants. Defaults to true.
@@ -74,15 +55,6 @@ class SingleTableBehavior extends Behavior
         } else {
             $this->setType();
         }
-
-        if (isset($config['field_name'])) {
-            $this->_fieldName = $config['field_name'];
-        } else {
-            $this->_fieldName = 'type';
-        }
-
-        $this->_hierarchy = (isset($config['hierarchy'])
-            && ($config['hierarchy'] === false)) ? false : true;
     }
 
     /**
@@ -92,23 +64,21 @@ class SingleTableBehavior extends Behavior
      */
     public function getType()
     {
-        return $this->_type;
+        return $this->config('type');
     }
 
      /**
      * Mutator for the type value.
      *
-     * @param string|null $type type value.
+     * @param string|null $type Type value.
      * @return string
      */
     public function setType($type = null)
     {
-        if ($type !== null) {
-            $this->_type = $type;
-        }
-
-        if ($this->_type === null) {
-            $this->_type = $this->_table->alias();
+        if (!empty($type)) {
+            $this->config('type', $type);
+        } else {
+            $this->config('type', $this->_table->table());
         }
     }
 
@@ -121,7 +91,7 @@ class SingleTableBehavior extends Behavior
      */
     public function beforeSave(Event $event, EntityInterface $entity, ArrayAccess $options)
     {
-        $fieldName = $this->_fieldName;
+        $fieldName = $this->config('field_name');
         if ($this->_setTypeAllowed($entity)) {
             $classHierarchy = $this->_getClassHierarchy($entity);
             $entity->set($fieldName, $classHierarchy);
@@ -162,7 +132,7 @@ class SingleTableBehavior extends Behavior
 
     /**
      * Checks if class type field can still be set. Setting it is only possible
-     * when $_fieldName determining class type is still empty.
+     * when field determining class type is still empty.
      *
      * @param \Cake\Datasource\EntityInterface $entity
      * @param string $entity $fieldName
@@ -170,7 +140,7 @@ class SingleTableBehavior extends Behavior
      */
     protected function _setTypeAllowed(EntityInterface $entity)
     {
-        $fieldName = $this->_fieldName;
+        $fieldName = $this->config('field_name');
         return !empty($entity->$fieldName) ? false : true;
     }
 
@@ -184,14 +154,13 @@ class SingleTableBehavior extends Behavior
      */
     protected function _getClassHierarchy(EntityInterface $entity)
     {
-        $fieldName = $this->_fieldName;
         $currentType = $this->_formatTypeName();
         if ($currentType === false) {
             return null;
         }
         $hierarchy = $currentType;
         // Append ancestor names unless this option has been disabled.
-        if ($this->_hierarchy) {
+        if ($this->config('hierarchy')) {
             $parentType = $this->_getParentTypes();
             // Remove leading '|' from $parentType before concatenating.
             $hierarchy .= substr($parentType, 1);
@@ -209,7 +178,7 @@ class SingleTableBehavior extends Behavior
      */
     protected function _getQueryCondition($type)
     {
-        $field = $this->_table->aliasField($this->_fieldName);
+        $field = $this->_table->aliasField($this->config('field_name'));
         $condition = [$field . ' LIKE' => '%' . $type . '%'];
 
         return $condition;
@@ -226,7 +195,7 @@ class SingleTableBehavior extends Behavior
         $type = $this->_formatTypeName();
 
         if ($type !== false) {
-            $fieldName = $this->_fieldName;
+            $fieldName = $this->config('field_name');
 
             if ($entity->has($fieldName) && strpos($entity->get($fieldName), $type) === false) {
                 return false;
