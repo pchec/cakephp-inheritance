@@ -29,6 +29,14 @@ class TestClientsTable extends TestPeopleTable
     }
 }
 
+class BestTestClientsTable extends TestClientsTable
+{
+    public function initialize(array $config)
+    {
+        $this->table('test_people');
+        $this->addBehavior('Inheritance.SingleTable');
+    }
+}
 
 class TestUsersTable extends TestPeopleTable
 {
@@ -49,6 +57,10 @@ class TestPerson extends Entity
 }
 
 class TestClient extends TestPerson
+{
+}
+
+class BestTestClient extends TestPerson
 {
 }
 
@@ -90,6 +102,12 @@ class SingleTableBehaviorTest extends TestCase
             'className' => 'Inheritance\Test\TestCase\Model\Behavior\TestClientsTable',
         ]);
         $this->Clients->addBehavior('Inheritance.SingleTable');
+
+        $this->BestClients = TableRegistry::get('BestTestClients', [
+            'entityClass' => 'Inheritance\Test\TestCase\Model\Behavior\BestTestClient',
+            'className' => 'Inheritance\Test\TestCase\Model\Behavior\BestTestClientsTable',
+        ]);
+        $this->BestClients->addBehavior('Inheritance.SingleTable');
 
         $this->Users = TableRegistry::get('TestUsers', [
             'entityClass' => 'Inheritance\Test\TestCase\Model\Behavior\TestUser',
@@ -133,6 +151,13 @@ class SingleTableBehaviorTest extends TestCase
         $this->Clients->save($client);
         $this->assertFalse(empty($client->type));
         $this->assertEquals('|TestClients|TestPeople|', $client->type);
+
+        // Testing if hierarchy delimiters are created properly for multiple levels.
+        $client = $this->BestClients->newEntity();
+        $this->assertTrue(empty($client->type));
+        $this->BestClients->save($client);
+        $this->assertFalse(empty($client->type));
+        $this->assertEquals('|BestTestClients|TestClients|TestPeople|', $client->type);
 
         // Test saving descendant entity with 'hierarchy' == false
         $user = $this->Users->newEntity();
