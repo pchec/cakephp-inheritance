@@ -40,4 +40,10 @@
         </blacklist>
     </filter>
 
+    <!-- Whitelist all php files in src for code coverage reports -->
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">./src/</directory>
+        </whitelist>
+    </filter>
 </phpunit>
