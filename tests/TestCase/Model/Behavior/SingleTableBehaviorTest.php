@@ -39,6 +39,7 @@ class TestUsersTable extends TestPeopleTable
             'table' => 'test_people',
             'field_name' => 'type',
             'hierarchy' => false,
+            'type' => 'NormalUsers',
         ]);
     }
 }
@@ -138,7 +139,7 @@ class SingleTableBehaviorTest extends TestCase
         $this->assertTrue(empty($user->type));
         $this->Users->save($user);
         $this->assertFalse(empty($user->type));
-        $this->assertEquals('|TestUsers|', $user->type);
+        $this->assertEquals('|NormalUsers|', $user->type);
     }
 
     /**
