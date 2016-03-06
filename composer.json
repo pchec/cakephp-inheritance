@@ -16,7 +16,7 @@
     "license": "MIT",
     "support":{
         "source":"https://github.com/pchec/cakephp-inheritance",
-        "issues":"https://github.com/pchec/cakephp-inheritance/issues",
+        "issues":"https://github.com/pchec/cakephp-inheritance/issues"
     },
     "require": {
         "php": ">=5.4.16",
