@@ -156,20 +156,19 @@ class SingleTableBehavior extends Behavior
      */
     protected function _getClassHierarchy(EntityInterface $entity)
     {
-        $currentType = $this->_formatTypeName();
-        if ($currentType === false) {
-            return null;
-        }
-        $hierarchy = $currentType;
+        // Begin the hierarchy with the current class type.
+        // It will always be set for descendants of Cake\ORM\Table
+        // using this behavior.
+        $hierarchy = $this->_formatTypeName();
 
         // Append ancestor names unless this option has been disabled.
         if ($this->config('hierarchy')) {
             $parentType = $this->_getParentTypes();
-            // Remove leading '|' from $parentType before concatenating.
-            $hierarchy .= substr($parentType, 1);
+            $hierarchy .= $parentType;
         }
 
-        return $hierarchy;
+        // Trailing delimitter needs to be added to the hierarchy.
+        return $hierarchy . '|';
     }
 
     /**
@@ -217,12 +216,6 @@ class SingleTableBehavior extends Behavior
      */
     protected function _formatTypeName($className = null)
     {
-        // false can be passed by get_parent_class() if the class
-        // being checked has no parent.
-        if ($className === false) {
-            return false;
-        }
-
         // Assume current table class if no argument passed.
         if (empty($className)) {
             $type = $this->getType();
@@ -239,13 +232,7 @@ class SingleTableBehavior extends Behavior
 
         $type = $this->_trimClassName($type);
 
-        // When base Table class is reached, return false.
-        // Its name has been removed earlier, leaving only ''.
-        if ($type == '') {
-            return false;
-        } else {
-            return '|' . $type . '|';
-        }
+        return '|' . $type;
     }
 
     /**
