@@ -8,6 +8,7 @@ use Cake\Event\Event;
 use Cake\ORM\Behavior;
 use Cake\ORM\Query;
 use Cake\ORM\Table;
+use Cake\Utility\Inflector;
 
 /**
  * Single Table Inheritance behavior for CakePHP applications.
@@ -76,9 +77,10 @@ class SingleTableBehavior extends Behavior
     public function setType($type = null)
     {
         if (!empty($type)) {
-            $this->config('type', $type);
+            $this->config('type', Inflector::camelize($type));
         } else {
-            $this->config('type', $this->_table->table());
+            $type = $this->_trimClassName(get_class($this->_table));
+            $this->config('type', $type);
         }
     }
 
@@ -108,7 +110,7 @@ class SingleTableBehavior extends Behavior
     public function beforeFind(Event $event, Query $query, ArrayAccess $options)
     {
         $type = $this->_formatTypeName();
-        if ($type !== false) {
+        if ($type) {
             $query->where($this->_getQueryCondition($type));
         }
     }
@@ -159,6 +161,7 @@ class SingleTableBehavior extends Behavior
             return null;
         }
         $hierarchy = $currentType;
+
         // Append ancestor names unless this option has been disabled.
         if ($this->config('hierarchy')) {
             $parentType = $this->_getParentTypes();
@@ -180,7 +183,6 @@ class SingleTableBehavior extends Behavior
     {
         $field = $this->_table->aliasField($this->config('field_name'));
         $condition = [$field . ' LIKE' => '%' . $type . '%'];
-
         return $condition;
     }
 
@@ -210,23 +212,35 @@ class SingleTableBehavior extends Behavior
      * leaving only the name of the class to be used as the type.
      * Assumes current table class if no argument passed.
      *
-     * @param string|bool $class Class name with full path
+     * @param string|bool $className Class name with full path
      * @return string
      */
-    protected function _formatTypeName($class = null)
+    protected function _formatTypeName($className = null)
     {
-        // false can be passed by get_parent_class() if there is none.
-        if ($class === false) {
+        // false can be passed by get_parent_class() if the class
+        // being checked has no parent.
+        if ($className === false) {
             return false;
         }
+
         // Assume current table class if no argument passed.
-        if ($class === null) {
-            $class = get_class($this->_table);
+        if (empty($className)) {
+            $type = $this->getType();
+        } else {
+            // If function getType does not exist, we have reached
+            // the main Table class and need to end.
+            //if (!method_exists($className, 'getType')) {
+            if ($className == 'Cake\ORM\Table') {
+                return false;
+            }
+            $class = new $className;
+            $type = $class->getType();
         }
-        // Strip out the class path
-        $type = substr(strrchr($class, '\\'), 1);
-        // Class names end with 'Table', so strip it out as well.
-        $type = substr($type, 0, strpos($type, 'Table'));
+
+        $type = $this->_trimClassName($type);
+
+        // When base Table class is reached, return false.
+        // Its name has been removed earlier, leaving only ''.
         if ($type == '') {
             return false;
         } else {
@@ -244,26 +258,45 @@ class SingleTableBehavior extends Behavior
     protected function _getParentTypes() {
         $i = 0;
         $types = null;
-        $parentClass = null;
         $currentClass = $this->_table;
+        $parentType = null;
+
         // Build a list of parent type names, separated by '|'.
-        do {
-            // Get parent class name.
+        while ($parentType !== false and $i < 20) {
             $parentClass = get_parent_class($currentClass);
-            // Format the type name appropriately
-            $parent = $this->_formatTypeName($parentClass);
-            // Loop ends when the Table class is reached (its name reduced to '||').
-            if (!($parent === false)) {
-                $types .= $parent;
-                // Instantinate the class to prepare for the next loop.
-                $currentClass = new $parentClass();
+            $parentType = $this->_formatTypeName($parentClass);
+            if ($parentType !== false) {
+                $types .= $parentType;
             }
-            // $i is a safety net to end the loop after 20 iterations in case
-            // of any bugs.
-            // The loop can also end if there are no further class parents.
+            $currentClass = $parentClass;
             $i++;
-        } while ($parent != '' and $parent !== false and $i < 20);
+        }
 
         return $types;
+    }
+
+    /**
+     * Strips leading class path and the word Table from the end.
+     *
+     * @param string $className
+     * @return string
+     */
+    protected function _trimClassName($className) {
+        $trimmedName = $className;
+
+        // Strip out the class path
+        $foundAt = strpos($className, '\\');
+        if ($foundAt !== false) {
+            $trimmedName = substr(strrchr($trimmedName, '\\'), 1);
+        }
+
+        // Class names end with 'Table' by convention,
+        // so strip it out as well if found.
+        $foundAt = strpos($trimmedName, 'Table');
+        if ($foundAt !== false) {
+            $trimmedName = substr($trimmedName, 0, $foundAt);
+        }
+
+        return $trimmedName;
     }
 }
