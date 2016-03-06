@@ -1,7 +1,23 @@
 {
-    "name": "pchec/Inheritance",
+    "name": "pchec/cakephp-inheritance",
     "description": "CakePHP plugin with Single Table Inheritance behavior",
+    "keywords":[
+        "cakephp",
+        "inheritance"
+    ],
+   "homepage": "http://github.com/pchec/cakephp-inheritance",
+    "authors":[
+        {
+            "name":"Piotr Chec",
+            "role":"Author"
+        }
+    ],
     "type": "cakephp-plugin",
+    "license": "MIT",
+    "support":{
+        "source":"https://github.com/pchec/cakephp-inheritance",
+        "issues":"https://github.com/pchec/cakephp-inheritance/issues",
+    },
     "require": {
         "php": ">=5.4.16",
         "cakephp/cakephp": "~3.0"
