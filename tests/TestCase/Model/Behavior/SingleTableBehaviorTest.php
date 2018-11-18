@@ -15,7 +15,7 @@ class TestPeopleTable extends Table
 {
     public function initialize(array $config)
     {
-        $this->table('test_people');
+        $this->setTable('test_people');
         $this->addBehavior('Inheritance.SingleTable');
     }
 }
@@ -24,7 +24,7 @@ class TestClientsTable extends TestPeopleTable
 {
     public function initialize(array $config)
     {
-        $this->table('test_people');
+        $this->setTable('test_people');
         $this->addBehavior('Inheritance.SingleTable');
     }
 }
@@ -33,7 +33,7 @@ class BestTestClientsTable extends TestClientsTable
 {
     public function initialize(array $config)
     {
-        $this->table('test_people');
+        $this->setTable('test_people');
         $this->addBehavior('Inheritance.SingleTable');
     }
 }
@@ -42,7 +42,6 @@ class TestUsersTable extends TestPeopleTable
 {
     public function initialize(array $config)
     {
-        //$this->table('people');
         $this->addBehavior('Inheritance.SingleTable', [
             'table' => 'test_people',
             'field_name' => 'type',
@@ -189,7 +188,7 @@ class SingleTableBehaviorTest extends TestCase
     public function testBeforeFindError()
     {
         // Recrod with that ID is a person and a client, but not a user.
-        $this->setExpectedException('Cake\Datasource\Exception\RecordNotFoundException');
+        $this->expectException('Cake\Datasource\Exception\RecordNotFoundException');
         $record = $this->Users->get('6c5aefcc-6699-49e1-86be-2aac9d61fb78');
     }
 
