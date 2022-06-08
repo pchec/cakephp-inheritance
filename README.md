@@ -1,3 +1,5 @@
+Note: This repository is archived and not maintained.
+
 # Inheritance plugin for CakePHP
 
 This plugin enables Single Table Inheritance in CakePHP ORM.
